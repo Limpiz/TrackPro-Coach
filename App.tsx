@@ -1,22 +1,33 @@
 import React, { useState } from 'react';
+import Layout from './components/Layout';
+import SplitCalculator from './components/SplitCalculator';
+import ProStopwatch from './components/ProStopwatch';
+import MultiRunnerTimer from './components/MultiRunnerTimer';
+import { AppTab } from './types'; // Make sure this file exists in your root!
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('CALCULATOR');
+  // Use the AppTab enum instead of a string
+  const [activeTab, setActiveTab] = useState<AppTab>(AppTab.CALCULATOR);
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case AppTab.CALCULATOR:
+        return <SplitCalculator />;
+      case AppTab.STOPWATCH:
+        return <ProStopwatch />;
+      case AppTab.MULTI_RUNNER:
+        return <MultiRunnerTimer />;
+      default:
+        return <SplitCalculator />;
+    }
+  };
 
   return (
-    <div style={{ padding: '20px', backgroundColor: '#0f172a', minHeight: '100vh', color: 'white' }}>
-      <nav style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-        <button onClick={() => setActiveTab('CALCULATOR')}>Calculator</button>
-        <button onClick={() => setActiveTab('STOPWATCH')}>Stopwatch</button>
-      </nav>
-      
-      <h1>TrackPro Coach</h1>
-      <p>Current Tab: {activeTab}</p>
-      <div style={{ border: '1px solid #334155', padding: '20px', borderRadius: '8px' }}>
-        {activeTab === 'CALCULATOR' && <div>Split Calculator coming soon...</div>}
-        {activeTab === 'STOPWATCH' && <div>Pro Stopwatch coming soon...</div>}
+    <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
+      <div className="animate-in fade-in duration-300">
+        {renderContent()}
       </div>
-    </div>
+    </Layout>
   );
 };
 
