@@ -9,7 +9,7 @@ const MultiRunnerTimer: React.FC = () => {
   const [isRaceRunning, setIsRaceRunning] = useState(false);
   const [newName, setNewName] = useState('');
   
-  // 1. Updated state to allow empty string
+  // Settings: Allow empty string for the target input
   const [newTarget, setNewTarget] = useState<number | "">(90);
 
   const timerRef = useRef<number | null>(null);
@@ -27,17 +27,17 @@ const MultiRunnerTimer: React.FC = () => {
       if (timerRef.current) cancelAnimationFrame(timerRef.current);
     }
     return () => { if (timerRef.current) cancelAnimationFrame(timerRef.current); };
-  }, [isRaceRunning]);
+  }, [isRaceRunning, globalTime]);
 
   const addRunner = () => {
-    // 2. Prevent adding if name is blank OR target is empty/0
-    if (!newName || !newTarget || Number(newTarget) <= 0) return;
+    // Math check: convert the potential "" to a number for validation
+    const targetNum = Number(newTarget);
+    if (!newName || targetNum <= 0) return;
 
     const newRunner: Runner = {
       id: Math.random().toString(36).substr(2, 9),
       name: newName,
-      // 3. Ensure we save a real Number into the runner object
-      targetTime: Number(newTarget),
+      targetTime: targetNum,
       status: 'idle',
       startTime: null,
       endTime: null,
@@ -95,8 +95,8 @@ const MultiRunnerTimer: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* MASTER CLOCK CARD */}
       <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
-        {/* Master Clock Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div className="flex flex-col">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Master Clock</span>
@@ -115,7 +115,7 @@ const MultiRunnerTimer: React.FC = () => {
           </div>
         </div>
 
-        {/* Add Runner Input Section */}
+        {/* INPUTS: ONLY SHOWN BEFORE RACE STARTS */}
         {!isRaceRunning && globalTime === 0 && (
           <div className="flex flex-wrap items-center gap-3 p-4 bg-slate-900/50 rounded-xl border border-slate-700">
             <div className="flex-1 min-w-[200px]">
@@ -132,7 +132,6 @@ const MultiRunnerTimer: React.FC = () => {
               <input
                 type="number"
                 value={newTarget}
-                // 4. Added the empty string check here
                 onChange={(e) => setNewTarget(e.target.value === "" ? "" : Number(e.target.value))}
                 className="w-12 bg-transparent font-mono text-center outline-none"
               />
@@ -144,7 +143,7 @@ const MultiRunnerTimer: React.FC = () => {
         )}
       </div>
 
-      {/* Runner Cards */}
+      {/* RUNNER GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {runners.map((runner) => (
           <div key={runner.id} className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-lg flex flex-col">
@@ -166,7 +165,6 @@ const MultiRunnerTimer: React.FC = () => {
             </div>
 
             <div className="p-4 flex-1 flex flex-col justify-between gap-4">
-              {/* Timing Display */}
               <div className="flex items-end justify-between">
                 <div>
                   <div className="text-[10px] text-slate-500 uppercase font-bold">Elapsed</div>
@@ -182,12 +180,11 @@ const MultiRunnerTimer: React.FC = () => {
                 </div>
               </div>
 
-              {/* Runner Controls */}
               <div className="flex gap-2">
                 <button
                   disabled={runner.status !== 'running'}
                   onClick={() => recordLap(runner.id)}
-                  className="flex-1 py-4 bg-blue-500 hover:bg-blue-600 disabled:opacity-20 disabled:grayscale rounded-xl flex items-center justify-center gap-2 text-slate-900 font-bold transition-all active:scale-95"
+                  className="flex-1 py-4 bg-blue-500 hover:bg-blue-600 disabled:opacity-20 rounded-xl flex items-center justify-center gap-2 text-slate-900 font-bold transition-all active:scale-95"
                 >
                   <Flag className="w-5 h-5" /> LAP {runner.laps.length + 1}
                 </button>
@@ -200,9 +197,9 @@ const MultiRunnerTimer: React.FC = () => {
                 </button>
               </div>
 
-              {/* Mini Lap History */}
+              {/* INDIVIDUAL RUNNER LAP HISTORY */}
               {runner.laps.length > 0 && (
-                <div className="mt-2 space-y-1 max-h-24 overflow-y-auto pr-1">
+                <div className="mt-2 space-y-1 max-h-32 overflow-y-auto pr-1">
                   {runner.laps.map(lap => (
                     <div key={lap.lapNumber} className="flex justify-between items-center text-xs py-1 border-b border-slate-700 last:border-0">
                       <span className="text-slate-500 font-bold">L{lap.lapNumber}</span>
@@ -217,11 +214,6 @@ const MultiRunnerTimer: React.FC = () => {
             </div>
           </div>
         ))}
-        {runners.length === 0 && (
-          <div className="col-span-full py-12 text-center text-slate-500 italic">
-            Add some runners to start a multi-track race.
-          </div>
-        )}
       </div>
     </div>
   );
