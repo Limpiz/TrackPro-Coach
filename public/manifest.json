@@ -3,7 +3,7 @@
   "name": "TrackPro Coach: Elite Racing",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3069/3069162.png",
+      "src": "https://lucide.dev/api/icons/timer?color=10b981&size=512",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
