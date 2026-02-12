@@ -9,28 +9,34 @@ const MultiRunnerTimer: React.FC = () => {
   const [isRaceRunning, setIsRaceRunning] = useState(false);
   const [newName, setNewName] = useState('');
   
-  // Settings: Allow empty string for the target input
   const [newTarget, setNewTarget] = useState<number | "">(90);
 
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
 
+  // MASTER CLOCK ACCURACY FIX
   useEffect(() => {
     if (isRaceRunning) {
+      // Sync the hardware clock start point with current elapsed time
       startTimeRef.current = performance.now() - globalTime * 1000;
+      
       const update = () => {
-        setGlobalTime((performance.now() - startTimeRef.current) / 1000);
+        const now = performance.now();
+        setGlobalTime((now - startTimeRef.current) / 1000);
         timerRef.current = requestAnimationFrame(update);
       };
       timerRef.current = requestAnimationFrame(update);
     } else {
-      if (timerRef.current) cancelAnimationFrame(timerRef.current);
+      if (timerRef.current) {
+        cancelAnimationFrame(timerRef.current);
+        timerRef.current = null;
+      }
     }
     return () => { if (timerRef.current) cancelAnimationFrame(timerRef.current); };
-  }, [isRaceRunning, globalTime]);
+    // 'globalTime' removed from dependencies to prevent the "lag-loop"
+  }, [isRaceRunning]);
 
   const addRunner = () => {
-    // Math check: convert the potential "" to a number for validation
     const targetNum = Number(newTarget);
     if (!newName || targetNum <= 0) return;
 
@@ -48,13 +54,20 @@ const MultiRunnerTimer: React.FC = () => {
   };
 
   const startRace = () => {
+    const now = performance.now();
+    startTimeRef.current = now; // Set master start
     setIsRaceRunning(true);
-    setRunners(runners.map(r => ({ ...r, status: 'running', startTime: performance.now() })));
+    setRunners(runners.map(r => ({ 
+      ...r, 
+      status: 'running', 
+      startTime: now // All runners share the exact same start timestamp
+    })));
   };
 
   const stopRace = () => {
     setIsRaceRunning(false);
-    setRunners(runners.map(r => r.status === 'running' ? { ...r, status: 'finished', endTime: performance.now() } : r));
+    const now = performance.now();
+    setRunners(runners.map(r => r.status === 'running' ? { ...r, status: 'finished', endTime: now } : r));
   };
 
   const resetRace = () => {
@@ -115,7 +128,6 @@ const MultiRunnerTimer: React.FC = () => {
           </div>
         </div>
 
-        {/* INPUTS: ONLY SHOWN BEFORE RACE STARTS */}
         {!isRaceRunning && globalTime === 0 && (
           <div className="flex flex-wrap items-center gap-3 p-4 bg-slate-900/50 rounded-xl border border-slate-700">
             <div className="flex-1 min-w-[200px]">
@@ -197,7 +209,6 @@ const MultiRunnerTimer: React.FC = () => {
                 </button>
               </div>
 
-              {/* INDIVIDUAL RUNNER LAP HISTORY */}
               {runner.laps.length > 0 && (
                 <div className="mt-2 space-y-1 max-h-32 overflow-y-auto pr-1">
                   {runner.laps.map(lap => (

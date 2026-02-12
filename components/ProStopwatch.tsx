@@ -8,7 +8,7 @@ const ProStopwatch: React.FC = () => {
   const [time, setTime] = useState(0);
   const [laps, setLaps] = useState<Lap[]>([]);
   
-  // Settings (Allow empty string for typing)
+  // Settings
   const [lapDist, setLapDist] = useState<number | "">(400);
   const [totalRaceDist, setTotalRaceDist] = useState<number | "">(5000);
   const [targetTotalTimeStr, setTargetTotalTimeStr] = useState("18:30");
@@ -16,14 +16,19 @@ const ProStopwatch: React.FC = () => {
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
 
+  // ACCURACY FIX: The loop now runs independently of React's render cycle
   useEffect(() => {
     if (isRunning) {
+      // Set the start point based on the REAL hardware clock
       startTimeRef.current = performance.now() - time * 1000;
+      
       const update = () => {
         const now = performance.now();
+        // Calculate the exact elapsed time based on the delta
         setTime((now - startTimeRef.current) / 1000);
         timerRef.current = requestAnimationFrame(update);
       };
+      
       timerRef.current = requestAnimationFrame(update);
     } else {
       if (timerRef.current) {
@@ -31,12 +36,14 @@ const ProStopwatch: React.FC = () => {
         timerRef.current = null;
       }
     }
+
     return () => {
       if (timerRef.current) cancelAnimationFrame(timerRef.current);
     };
-  }, [isRunning, time]);
+    // We only restart the effect when isRunning changes, NOT when time updates
+  }, [isRunning]); 
 
-  // Math safety
+  // Math safety & Memoized Calculations
   const targetTotalSeconds = useMemo(() => parseTimeToSeconds(targetTotalTimeStr), [targetTotalTimeStr]);
   const targetPacePerMeter = useMemo(() => {
     const dist = Number(totalRaceDist);
@@ -105,7 +112,7 @@ const ProStopwatch: React.FC = () => {
               type="number"
               value={totalRaceDist}
               onChange={(e) => setTotalRaceDist(e.target.value === "" ? "" : Number(e.target.value))}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono focus:ring-1 focus:ring-emerald-500 outline-none"
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
           <div className="space-y-1">
@@ -114,7 +121,7 @@ const ProStopwatch: React.FC = () => {
               type="text"
               value={targetTotalTimeStr}
               onChange={(e) => setTargetTotalTimeStr(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono focus:ring-1 focus:ring-emerald-500 outline-none"
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
           <div className="space-y-1">
@@ -123,7 +130,7 @@ const ProStopwatch: React.FC = () => {
               type="number"
               value={lapDist}
               onChange={(e) => setLapDist(e.target.value === "" ? "" : Number(e.target.value))}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono focus:ring-1 focus:ring-emerald-500 outline-none"
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
         </div>
@@ -185,7 +192,7 @@ const ProStopwatch: React.FC = () => {
         </div>
       </div>
 
-      {/* --- RESTORED LAP HISTORY --- */}
+      {/* Lap History */}
       <div className="space-y-3">
         <div className="flex justify-between items-center px-1">
           <h3 className="text-lg font-bold flex items-center gap-2">
